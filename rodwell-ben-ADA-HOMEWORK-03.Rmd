@@ -9,22 +9,278 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-## R Markdown
+#  PROBLEM 2 
+#### The comparative primate dataset we have used from Kamilar
+#### and Cooper has in it a large number of variables related to 
+#### life history and body size. For this exercise, the end aim is
+#### to fit a simple linear regression model to predict longevity
+#### (MaxLongevity_m) measured in months from species' brain size
+#### (Brain_Size_Species_Mean) measured in grams. Do the following 
+#### for both longevity~brain size and log(longevity)~log(brain size).
 
-This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
-
-When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
-
-```{r cars}
-summary(cars)
+## Prepare the data into vectors to be used and create linear models
+```{r}
+library(tidyverse)
+library(readr)
+f <- "https://raw.githubusercontent.com/difiore/ADA-2019/master/KamilarAndCooperData.csv"
+d <- read_csv(f, col_names = TRUE)
+head(d)
 ```
 
-## Including Plots
+```{r}
+## Create vectors for Longevity and Brain Size
+x1 <- d$Brain_Size_Species_Mean
+y1 <- d$MaxLongevity_m
 
-You can also embed plots, for example:
+## Create vectors for log(Longevity) and log(Brain size)
+x2 <- log(x1)
+y2 <- log(y1)
 
-```{r pressure, echo=FALSE}
-plot(pressure)
+## Linear regression for Longevity and Brain Size
+lb <- lm(data = d,  y1 ~ x1)
+lb
+
+## Linear regression forlog transformed Longevity and Brain Size
+loglb <- lm(data = d, y2 ~ x2) 
+loglb
 ```
 
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+
+#### Fit the regression model and, using {ggplot2}, produce a scatterplot
+#### with the fitted line superimposed upon the data. Append the the
+#### fitted model equation to your plot (HINT: use the function geom_text()).
+
+
+
+```{r}
+## Raw data
+g1 <- ggplot(data = d, aes(x = x1, y = y1)) + geom_point() +
+  ggtitle("Linear Model of Primate Longevity and Brain Size") +
+  theme(plot.title = element_text(hjust = 0.5)) +
+  xlab ("Species Mean Brain Size (g)") +
+  ylab ("Species Maximum Lifespan (months)") +
+  geom_smooth(method = "lm", formula = y ~ x, col = "purple") +
+  annotate("text", label = "y = 1.218 * x + 248.952", x = 100, y = 800, size = 6)
+g1
+
+```
+
+
+```{r}
+## Log transformed data
+g2 <- ggplot(data = d, aes(x = x2, y = y2)) + geom_point() +
+  ggtitle("Linear Model of log(Primate Longevity) and log(Brain Size)") +
+  theme(plot.title = element_text(hjust = 0.5)) +
+  xlab ("Species Mean Brain Size (log(g))") +
+  ylab ("Species Maximum Lifespan (log(months))") +
+  geom_smooth(method = "lm", formula = y ~ x, col = "magenta") +
+  annotate("text", label = "y = 0.2341 * x + 4.879", x = 1.5, y = 6.4, size = 6)
+g2
+```
+
+#### Identify and interpret the point estimate of the slope (BETA1),
+#### as well as the outcome of the test associated with the hypotheses
+#### H0: BETA1 = 0; HA: BETA1 NOT= 0. Also, find a 90% CI for the slope (BETA1) parameter.
+
+```{r}
+
+## Identify slope (BETA1) of first regression (raw data)
+slope_lb <- lb$coefficients[2]
+slope_lb
+
+
+
+## Calculate 90% confidence intervals (raw data)
+t1 <- coef(summary(lb))
+t1 <- data.frame(unlist(t1))
+colnames(t1) <- c("Est", "SE", "t", "p")
+t1
+
+
+alpha <- 0.10
+t1$lmCI <- confint(lb, level = 1 - alpha)  
+attributes(t1$lmCI)
+
+
+## Confidence Intervals of the point estimate (raw data)
+t1[, 5]
+
+
+
+## Identify slope of first regression (log transformed data)
+slope_loglb <- loglb$coefficients[2]
+slope_loglb
+
+
+## Calculate 90% confidence intervals (log transformed data)
+t2 <- coef(summary(loglb))
+t2 <- data.frame(unlist(t2))
+colnames(t2) <- c("Est", "SE", "t", "p")
+t2
+
+
+
+alpha <- 0.10
+t2$lmCI <- confint(loglb, level = 1 - alpha)  
+attributes(t2$lmCI)
+
+
+
+## Confidence Intervals for the point estimate (log transformed data)
+t2[, 5]
+```
+
+
+#### Using your model, add lines for the 90% confidence and prediction
+#### interval bands on the plot, and add a legend to differentiate
+#### between the lines.
+
+```{r}
+## Raw data
+h_hatlb <- predict(lb, newdata = data.frame(brain = d$Brain_Size_Species_Mean))
+dflb <- data.frame(cbind(d$Brain_Size_Species_Mean, d$MaxLongevity_m, h_hatlb))
+names(dflb) <- c("x", "y", "yhat")
+head(dflb)
+
+cilb <- predict(lb, newdata = data.frame(brain = d$Brain_Size_Species_Mean), 
+                interval = "confidence", level = 0.90)
+head(cilb)
+
+
+dflb <- cbind(dflb, cilb)
+names(dflb) <- c("x", "y", "yhat", "CIfit", "CIlwr", "CIupr")
+head(dflb)
+
+pi <- predict(lb, newdata = data.frame(brain = d$Brain_Size_Species_Mean),
+              interval = "prediction", 
+              level = 0.90)
+head(pi)
+lwr <- pi[,2]
+upr <- pi[,3]
+
+g1 <- ggplot(data = d, aes(x = x1, y = y1)) + geom_point() +
+  ggtitle("Linear Model of Primate Longevity and Brain Size") +
+  theme(plot.title = element_text(hjust = 0.5)) +
+  xlab ("Species Mean Brain Size (g)") + ylab ("Species Maximum Lifespan (months)") +
+  annotate("text", label = "y = 1.218 * x + 248.952", x = 125, y = 800, size = 6) +
+  geom_point(alpha = 0.5) +
+  geom_line(aes(x = x1, y = dflb$CIfit, color = "Line of best fit")) +
+  geom_line(aes(x = x1, y = dflb$CIlwr, color = "90% CI")) +
+  geom_line(aes(x = x1, y = dflb$CIupr, color = "90% CI",)) +
+  geom_line(aes(x = x1, y = lwr, color = "90% PI")) +
+  geom_line(aes(x = x1, y = upr, color = "90% PI")) +
+  guides(color=guide_legend(title=""))
+g1
+```
+
+
+```{r}
+## Log transformed data
+h_hatloglb <- predict(loglb, newdata = data.frame(brain = d$Brain_Size_Species_Mean))
+dfloglb <- data.frame(cbind(d$Brain_Size_Species_Mean, d$MaxLongevity_m, h_hatloglb))
+names(dfloglb) <- c("x", "y", "yhat")
+head(dfloglb)
+
+ciloglb <- predict(loglb, newdata = data.frame(brain = d$Brain_Size_Species_Mean), 
+                   interval = "confidence", level = 0.90)
+head(ciloglb)
+
+
+dfloglb <- cbind(dfloglb, ciloglb)
+names(dfloglb) <- c("x", "y", "yhat", "CIfit", "CIlwr", "CIupr")
+head(dfloglb)
+
+pilog <- predict(loglb, newdata = data.frame(brain = d$Brain_Size_Species_Mean),
+                 interval = "prediction", 
+                 level = 0.90)
+head(pilog)
+lwrlog <- pilog[,2]
+uprlog <- pilog[,3]
+
+g2 <- ggplot(data = d, aes(x = x2, y = y2)) + geom_point() +
+  ggtitle("Linear Model of Primate log(Longevity) and log(Brain Size)") +
+  theme(plot.title = element_text(hjust = 0.5)) +
+  xlab ("log(Species Mean Brain Size (g))") +
+  ylab ("log(Species Maximum Lifespan (months))") +
+  annotate("text", label = "y = 0.2341 * x + 4.879", x = 1.8, y = 6.4, size = 6) +
+  geom_point(alpha = 0.5) + geom_line(aes(x = x2, y = lwrlog, color = "90% PI")) +
+  geom_line(aes(x = x2, y = uprlog, color = "90% PI")) +
+  geom_line(aes(x = x2, y = dfloglb$CIfit, color = "Line of Best Fit")) +
+  geom_line(aes(x = x2, y = dfloglb$CIlwr, color = "90% CI")) +
+  geom_line(aes(x = x2, y = dfloglb$CIupr, color = "90% CI")) +
+  guides(color=guide_legend(title=""))
+g2
+```
+
+
+#### Produce a point estimate and associated 90% prediction interval
+#### for the longevity of a species whose brain weight is 800 gm.
+#### Do you trust the model to predict observations accurately for
+#### this value of the explanatory variable? Why or why not?
+#### Looking at your two models, which do you think is better? Why?
+
+
+```{r}
+### Raw data preditction
+longest1 <- t1$Est[2] * 800 + t1$Est[1]
+longest1
+
+
+
+piest1 <- predict(lb, newdata = data.frame(x1 = 800), interval = "prediction", 
+                  level = 0.90)  # for a single value
+piest1
+summary(lb)
+
+## Plotting the estimated poing alongside the real data
+g1 <- ggplot(data = d, aes(x = x1, y = y1)) + geom_point() +
+  ggtitle("Linear Model of Primate Longevity and Brain Size") +
+  theme(plot.title = element_text(hjust = 0.5)) +
+  xlab ("Species Mean Brain Size (g)") + ylab ("Species Maximum Lifespan (months)") +
+  annotate("text", label = "y = 1.218 * x + 248.952", x = 125, y = 1100, size = 6) +
+  geom_point(alpha = 0.5) +
+  geom_line(aes(x = x1, y = dflb$CIfit, color = "Line of best fit")) +
+  geom_line(aes(x = x1, y = dflb$CIlwr, color = "90% CI")) +
+  geom_line(aes(x = x1, y = dflb$CIupr, color = "90% CI",)) +
+  geom_line(aes(x = x1, y = lwr, color = "90% PI")) +
+  geom_line(aes(x = x1, y = upr, color = "90% PI")) +
+  guides(color=guide_legend(title="")) +
+  xlim(0, 850) + ylim(0, 1300) +
+  geom_point(x = 800, y = longest1, color = "purple", shape = 13)
+g1
+
+
+
+
+### Log transformed data prediction
+longest2 <- t2$Est[2] * log(800) + t2$Est[1]
+longest2
+
+
+
+piest2 <- predict(loglb, newdata = data.frame(x2 = log(800)), interval = "prediction", 
+                  level = 0.90)  # for a single value
+piest2
+summary(loglb)
+
+## Plotting the estimated poing alongside the real log transformed data
+g2 <- ggplot(data = d, aes(x = x2, y = y2)) + geom_point() +
+  ggtitle("Linear Model of Primate log(Longevity) and log(Brain Size)") +
+  theme(plot.title = element_text(hjust = 0.5)) +
+  xlab ("log(Species Mean Brain Size (g))") +
+  ylab ("log(Species Maximum Lifespan (months))") +
+  annotate("text", label = "y = 0.2341 * x + 4.879", x = 4, y = 6.8, size = 6) +
+  geom_point(alpha = 0.5) + geom_line(aes(x = x2, y = lwrlog, color = "90% PI")) +
+  geom_line(aes(x = x2, y = uprlog, color = "90% PI")) +
+  geom_line(aes(x = x2, y = dfloglb$CIfit, color = "Line of Best Fit")) +
+  geom_line(aes(x = x2, y = dfloglb$CIlwr, color = "90% CI")) +
+  geom_line(aes(x = x2, y = dfloglb$CIupr, color = "90% CI")) +
+  guides(color=guide_legend(title="")) +
+  xlim(3, 7) + ylim (5, 7) +
+  geom_point(x = log(800), y = longest2, color = "purple", shape = 13)
+g2
+```
+
+
+## When looking at the the raw data versus the log tansformed data, the log transformed data appears to generate a better predictive model. The log transformed data provides a higher r-squared value, likely because it somewhat normalizes the data because brain size is not normally distributed in this data set. Because of the low fit of the models to the data I would be hesitant to take the predicted values as being highly accurate. Also when looking at the raw data further, most of the measured data points come from the lower end of the measured distribution for (<100 grams), and the dataset contains relatively fewer data points from the higher end of the distribution. This might mean that the dataset is biased towards species of smaller body size and is not entirely representative of the relationship between brain size and longevity, especially for species with larger brains.
+

@@ -1,152 +1,3 @@
-########## Module 13 and 14 ##########
-##### Module 13 Hypothesis Testing #####
-library(tidyverse)
-library(readr)
-
-## How do we calculate the p value?
-## 1. Specify the statistic we want to evaluate (e.g., the mean)
-## 2. Specify our null distribution and a test statistic (e.g., Z or T) 
-## 3. Calculate the tail probability, i.e., the probability of
-##    obtaining a statistic (e.g., a mean) as or more extreme
-##    than was observed assuming that null distribution
-
-
-## One sample means T and Z tests
-
-f <- "https://raw.githubusercontent.com/difiore/ADA-2019/master/vervet-weights.csv"
-d <- read_csv(f, col_names = TRUE)
-head(d)
-
-## 1. What is our H0?
-## 2. What is our HA?
-## 3. What is the hypothesis we want to test?
-##    Is it two-tailed? Upper-tailed? Lower-tailed?
-## 4. Calculate the mean, standard deviation, and SEM of the sample
-## 5. Plot a histogram of the sample
-
-
-mu <- 4.9 ## mean of comparison sample
-x <- d$weight
-m <- mean(x)
-s <- sd(x)
-n <- length(d$weight)
-sem <- s/sqrt(n)
-sem
-
-hist(x)
-
-
-## 1. Specify the statistic we want to evaluate (e.g., the mean)
-mu <- 4.9 
-
-## 2. Specify our null distribution and a test statistic (e.g., Z or T)
-z <- (m-mu)/(s/sqrt(n)) 
-z
-
-## 3. Calculate the tail probability, i.e., the probability of
-##    obtaining a statistic (e.g., a mean) as or more extreme
-##    than was observed assuming that null distribution
-
-p <- 1-pnorm(z)
-p
-
-## since we hypothesize that our sample is larger,
-## we test to make sure it is outside of the lower tail
-p <- pnorm(z, lower.tail = F)
-p
-
-
-## BUT since sample is less than 30 this is likely a T distribution
-## have to use T dist to test, and take degrees of freedom into account
-p <- 1 - pt(z, df = n-1)
-p
-
-## make sure outside of lower tail
-p <- pt(z, df = n-1, lower.tail = F)
-p
-
-## Calculate 95% confidence intervals
-crit <- qt(0.95, df = n - 1)
-crit
-
-ci <- m + c(-1, 1) * crit * sem
-ci ## the comparative sample mean falls outside of this!
-m
-
-### Two tailed test
-## Comparison population has mean of 7.3
-## We want to know if our sample is likely to be of similar makeup
-library(readr)
-library(tidyverse)
-
-f <- "https://raw.githubusercontent.com/difiore/ADA-2019/master/woolly-weights.csv"
-d <- read_csv(f, col_names = TRUE)
-head(d)
-
-mu <- 7.2
-x <- d$weight
-m <- mean(x)
-s <- sd(x)
-n <- length(x)
-sem <- s/sqrt(n)
-
-## Calculate T score
-t <- (m-mu)/(s/sqrt(n))
-t
-t <- (m-mu)/sem
-t
-
-## Calculate P value
-p.upper <- 1 - pt(abs(t), df = n-1)
-p.lower <- pt(-1 * abs(t), df = n-1)
-p <- p.upper + p.lower
-p
-
-
-
-
-
-##### Two Sample tests
-
-## Unequal variance
-f <- "https://raw.githubusercontent.com/difiore/ADA-2019/master/colobus-weights.csv"
-d <- read_csv(f, col_names = TRUE)
-head(d)
-
-x <- d$weight[d$sex == "male"]
-y <- d$weight[d$sex == "female"]
-m1 <- mean(x)
-m2 <- mean(y)
-s1 <- sd(x)
-s2 <- sd(y)
-n1 <- length(x)
-n2 <- length(y)
-sem1 <- s1/sqrt(n1)
-sem2 <- s2/sqrt(n1)
-
-par(mfrow = c(1,2))
-boxplot(x, ylim = c(4,8))
-boxplot(y, ylim = c(4,8))
-## variance is prob not equal
-
-## Calculate T statistic
-## need to know Degrees of Freedom
-df <- (s1^2/n1 + s2^2/n2)^2/((s1^2/n1)^2/(n1 - 1) + (s2^2/n2)^2/(n2 - 1))
-df
-
-
-## Now the T score
-t <- (m2-m1)/sqrt(s1^2/n1 + s2^2/n2)
-t
-
-## ID the critical values
-alpha <- 0.05
-crit <- qt(1-alpha/2, df = df)
-crit
-
-
-
-
 
 ############# Homework ###############
 ############  PROBLEM 1 ##############
@@ -303,7 +154,7 @@ g2 <- ggplot(data = d, aes(x = x2, y = y2)) + geom_point() +
   annotate("text", label = "y = 0.2341 * x + 4.879", x = 1.5, y = 6.4, size = 6)
 g2
 
-summary(lb)
+
 summary(loglb)
 
 
@@ -340,7 +191,7 @@ t1[, 5]
 ##########
 
 
-### Identify slope (??1) of first regression (log transformed data)
+### Identify slope of first regression (log transformed data)
 slope_loglb <- loglb$coefficients[2]
 slope_loglb
 
@@ -393,25 +244,21 @@ lwr <- pi[,2]
 upr <- pi[,3]
 
 
-g1 <- ggplot(data = d, aes(x = x1, y = y1))
-g1 <- g1 + geom_point()
-g1 <- g1 + ggtitle("Linear Model of Primate Longevity and Brain Size") +
-  theme(plot.title = element_text(hjust = 0.5))
-g1 <- g1 + xlab ("Species Mean Brain Size (g)")
-g1 <- g1 + ylab ("Species Maximum Lifespan (months)")
-g1 <- g1 + annotate("text", label = "y = 1.218 * x + 248.952", x = 125, y = 800, size = 6)
-g1 <- g1 + geom_point(alpha = 0.5)
-g1 <- g1 + geom_line(aes(x = x1, y = dflb$CIfit, color = "green"))
-g1 <- g1 + geom_line(aes(x = x1, y = dflb$CIlwr, color = "blue"))
-g1 <- g1 + geom_line(aes(x = x1, y = dflb$CIupr, color = "blue",))
-g1 <- g1 + geom_line(aes(x = x1, y = lwr, color = "red"))
-g1 <- g1 + geom_line(aes(x = x1, y = upr, color = "red"))
-g1 <- g1 + theme(legend.position = "right")
-g1 <- g1 + scale_fill_continuous(labels  = paste("Legend","Prediction Interval",
-                                                 "Best Fit Line", "90% Confidence Intervals" ))
+
+
+g1 <- ggplot(data = d, aes(x = x1, y = y1)) + geom_point() +
+  ggtitle("Linear Model of Primate Longevity and Brain Size") +
+  theme(plot.title = element_text(hjust = 0.5)) +
+  xlab ("Species Mean Brain Size (g)") + ylab ("Species Maximum Lifespan (months)") +
+  annotate("text", label = "y = 1.218 * x + 248.952", x = 125, y = 850, size = 6) +
+  geom_point(alpha = 0.5) +
+  geom_line(aes(x = x1, y = dflb$CIfit, color = "Line of best fit")) +
+  geom_line(aes(x = x1, y = dflb$CIlwr, color = "90% CI")) +
+  geom_line(aes(x = x1, y = dflb$CIupr, color = "90% CI",)) +
+  geom_line(aes(x = x1, y = lwr, color = "90% PI")) +
+  geom_line(aes(x = x1, y = upr, color = "90% PI")) +
+  guides(color=guide_legend(title=""))
 g1
-
-
 
 h_hatloglb <- predict(loglb, newdata = data.frame(brain = d$Brain_Size_Species_Mean))
 dfloglb <- data.frame(cbind(d$Brain_Size_Species_Mean, d$MaxLongevity_m, h_hatloglb))
@@ -436,25 +283,19 @@ uprlog <- pilog[,3]
 
 
 
-g2 <- ggplot(data = d, aes(x = x2, y = y2))
-g2 <- g2 + geom_point()
-g2 <- g2 + ggtitle("Linear Model of Primate log(Longevity) and log(Brain Size)") +
-  theme(plot.title = element_text(hjust = 0.5))
-g2 <- g2 + xlab ("log(Species Mean Brain Size (g))")
-g2 <- g2 + ylab ("log(Species Maximum Lifespan (months))")
-g2 <- g2 + annotate("text", label = "y = 0.2341 * x + 4.879", x = 1.8, y = 6.4, size = 6)
-g2 <- g2 + geom_point(alpha = 0.5)
-g2 <- g2 + geom_line(aes(x = x2, y = lwrlog, color = "red"))
-g2 <- g2 + geom_line(aes(x = x2, y = uprlog, color = "red"))
-g2 <- g2 + geom_line(aes(x = x2, y = dfloglb$CIfit, color = "green"))
-g2 <- g2 + geom_line(aes(x = x2, y = dfloglb$CIlwr, color = "blue"))
-g2 <- g2 + geom_line(aes(x = x2, y = dfloglb$CIupr, color = "blue"))
-g2 <- g2 + theme(legend.position = "right")
-g2 <- g2 + scale_fill_continuous(labels  = paste("Legend","Prediction Interval",
-                                                 "Best Fit Line", "90% Confidence Intervals" ))
+g2 <- ggplot(data = d, aes(x = x2, y = y2)) + geom_point() +
+  ggtitle("Linear Model of Primate log(Longevity) and log(Brain Size)") +
+  theme(plot.title = element_text(hjust = 0.5)) +
+  xlab ("log(Species Mean Brain Size (g))") +
+  ylab ("log(Species Maximum Lifespan (months))") +
+  annotate("text", label = "y = 0.2341 * x + 4.879", x = 1.5, y = 6.4, size = 6) +
+  geom_point(alpha = 0.5) + geom_line(aes(x = x2, y = lwrlog, color = "90% PI")) +
+  geom_line(aes(x = x2, y = uprlog, color = "90% PI")) +
+  geom_line(aes(x = x2, y = dfloglb$CIfit, color = "Line of Best Fit")) +
+  geom_line(aes(x = x2, y = dfloglb$CIlwr, color = "90% CI")) +
+  geom_line(aes(x = x2, y = dfloglb$CIupr, color = "90% CI")) +
+  guides(color=guide_legend(title=""))
 g2
-
-
 
 
 
@@ -467,6 +308,7 @@ g2
 ### Raw data preditction
 longest1 <- t1$Est[2] * 800 + t1$Est[1]
 longest1
+
 
 
 
@@ -484,6 +326,48 @@ longest2
 piest2 <- predict(loglb, newdata = data.frame(x2 = log(800)), interval = "prediction", 
                   level = 0.90)  # for a single value
 piest2
-s
 
 
+
+
+g1 <- ggplot(data = d, aes(x = x1, y = y1)) + geom_point() +
+  ggtitle("Linear Model of Primate Longevity and Brain Size") +
+  theme(plot.title = element_text(hjust = 0.5)) +
+  xlab ("Species Mean Brain Size (g)") + ylab ("Species Maximum Lifespan (months)") +
+  annotate("text", label = "y = 1.218 * x + 248.952", x = 125, y = 1100, size = 6) +
+  geom_point(alpha = 0.5) +
+  geom_line(aes(x = x1, y = dflb$CIfit, color = "Line of best fit")) +
+  geom_line(aes(x = x1, y = dflb$CIlwr, color = "90% CI")) +
+  geom_line(aes(x = x1, y = dflb$CIupr, color = "90% CI",)) +
+  geom_line(aes(x = x1, y = lwr, color = "90% PI")) +
+  geom_line(aes(x = x1, y = upr, color = "90% PI")) +
+  guides(color=guide_legend(title="")) +
+  xlim(0, 850) + ylim(0, 1300) +
+  geom_point(x = 800, y = longest1, color = "purple", shape = 13)
+g1
+
+
+
+
+g2 <- ggplot(data = d, aes(x = x2, y = y2)) + geom_point() +
+  ggtitle("Linear Model of Primate log(Longevity) and log(Brain Size)") +
+  theme(plot.title = element_text(hjust = 0.5)) +
+  xlab ("log(Species Mean Brain Size (g))") +
+  ylab ("log(Species Maximum Lifespan (months))") +
+  annotate("text", label = "y = 0.2341 * x + 4.879", x = 4, y = 6.8, size = 6) +
+  geom_point(alpha = 0.5) + geom_line(aes(x = x2, y = lwrlog, color = "90% PI")) +
+  geom_line(aes(x = x2, y = uprlog, color = "90% PI")) +
+  geom_line(aes(x = x2, y = dfloglb$CIfit, color = "Line of Best Fit")) +
+  geom_line(aes(x = x2, y = dfloglb$CIlwr, color = "90% CI")) +
+  geom_line(aes(x = x2, y = dfloglb$CIupr, color = "90% CI")) +
+  guides(color=guide_legend(title="")) +
+  xlim(3, 7) + ylim (5, 7) +
+  geom_point(x = log(800), y = longest2, color = "purple", shape = 13)
+g2
+
+
+boxplot(d$Brain_Size_Species_Mean)
+boxplot(d$MaxLongevity_m)
+
+boxplot(log(d$Brain_Size_Species_Mean))
+boxplot(log(d$MaxLongevity_m))
