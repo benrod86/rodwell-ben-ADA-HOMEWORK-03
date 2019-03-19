@@ -83,28 +83,29 @@ g2
 #### H0: BETA1 = 0; HA: BETA1 NOT= 0. Also, find a 90% CI for the slope (BETA1) parameter.
 
 ```{r}
-
-## Identify slope (BETA1) of first regression (raw data)
+## Identify slope (??1) of first regression (raw data)
 slope_lb <- lb$coefficients[2]
 slope_lb
 
-
-
-## Calculate 90% confidence intervals (raw data)
+## summarize in a data frame
 t1 <- coef(summary(lb))
 t1 <- data.frame(unlist(t1))
 colnames(t1) <- c("Est", "SE", "t", "p")
 t1
 
+## ID the p value of BETA1
+t1$p[2]
+
+
+## Calculate 90% confidence intervals
 
 alpha <- 0.10
 t1$lmCI <- confint(lb, level = 1 - alpha)  
 attributes(t1$lmCI)
 
 
-## Confidence Intervals of the point estimate (raw data)
+## Confidence Intervals of the point estimate
 t1[, 5]
-
 
 
 ## Identify slope of first regression (log transformed data)
@@ -112,23 +113,28 @@ slope_loglb <- loglb$coefficients[2]
 slope_loglb
 
 
-## Calculate 90% confidence intervals (log transformed data)
+## summarize in a data frame
 t2 <- coef(summary(loglb))
 t2 <- data.frame(unlist(t2))
 colnames(t2) <- c("Est", "SE", "t", "p")
 t2
 
+## ID p value of BETA1
+t2$p[2]
 
-
+## Calculate 90% confidence intervals
 alpha <- 0.10
 t2$lmCI <- confint(loglb, level = 1 - alpha)  
 attributes(t2$lmCI)
 
 
 
-## Confidence Intervals for the point estimate (log transformed data)
-t2[, 5]
+## Confidence Intervals for the point estimate
+t2[,5]
 ```
+
+## For both the raw and log transformed data, the p-values indicate that the BETA1 (the slope coefficient) is significantly different a null hypothesis of BETA1 being equaling zero.
+
 
 
 #### Using your model, add lines for the 90% confidence and prediction
