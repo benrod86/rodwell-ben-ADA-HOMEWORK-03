@@ -42,15 +42,15 @@
 Z.prop.test <- function(p1, n1, p2 = NULL,
                         n2 = NULL, p0, alternative = "two.sided",
                         conf.level = 0.95){
-  m1 <- mean(p1)
-  m2 <- mean(p2)
-  s1 <-sd(p1)
-  s2 <- sd(p2)
-  sem1 <- s1/sqrt(n1)
-  sem2 <- s2/sqrt(n2)
-  return(sem1)
+  if ((n1 * p1 < 5) & (n1 * (1 - p0)< 5)) {
+    warning("Assumption of normal distribution is not valid")
+  }
+  
+  z <- (p1 - p0)/sqrt(p0 * (1 - p0)/n1)
+  z
 }
-
+Z.prop.test(.2, 12,.4,2,.3)
+  
 
 
 
@@ -167,17 +167,21 @@ summary(loglb)
 ## as well as the outcome of the test associated with the hypotheses
 ## H0: ??1=0; HA: ??1???0. Also, find a 90% CI for the slope (??1) parameter.
 
-### Identify slope (??1) of first regression (raw data)
+## Identify slope (??1) of first regression (raw data)
 slope_lb <- lb$coefficients[2]
 slope_lb
 
-
-###Calculate 90% confidence intervals
+## summarize in a data frame
 t1 <- coef(summary(lb))
 t1 <- data.frame(unlist(t1))
 colnames(t1) <- c("Est", "SE", "t", "p")
 t1
 
+## ID the p value of BETA1
+t1$p[2]
+
+
+## Calculate 90% confidence intervals
 
 alpha <- 0.10
 t1$lmCI <- confint(lb, level = 1 - alpha)  
@@ -188,22 +192,23 @@ attributes(t1$lmCI)
 ## Confidence Intervals of the point estimate
 t1[, 5]
 
-##########
 
 
-### Identify slope of first regression (log transformed data)
+## Identify slope of first regression (log transformed data)
 slope_loglb <- loglb$coefficients[2]
 slope_loglb
 
 
-###Calculate 90% confidence intervals
+## summarize in a data frame
 t2 <- coef(summary(loglb))
 t2 <- data.frame(unlist(t2))
 colnames(t2) <- c("Est", "SE", "t", "p")
 t2
 
+## ID p value of BETA1
+t2$p[2]
 
-
+## Calculate 90% confidence intervals
 alpha <- 0.10
 t2$lmCI <- confint(loglb, level = 1 - alpha)  
 attributes(t2$lmCI)
@@ -365,7 +370,8 @@ g2 <- ggplot(data = d, aes(x = x2, y = y2)) + geom_point() +
   geom_point(x = log(800), y = longest2, color = "purple", shape = 13)
 g2
 
-
+summary(lb)
+summary(loglb)
 boxplot(d$Brain_Size_Species_Mean)
 boxplot(d$MaxLongevity_m)
 
