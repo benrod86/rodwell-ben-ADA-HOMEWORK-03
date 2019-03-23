@@ -45,12 +45,66 @@ Z.prop.test <- function(p1, n1, p2 = NULL,
   if ((n1 * p1 < 5) & (n1 * (1 - p0)< 5)) {
     warning("Assumption of normal distribution is not valid")
   }
-  
-  z <- (p1 - p0)/sqrt(p0 * (1 - p0)/n1)
-  z
+  if (is.null(p2) | is.null(n2)){
+    phat <- p1
+    pi <- p0
+    n <- n1
+    z <- (phat - pi)/sqrt(pi * (1 - pi)/n)
+    z
+  } else {
+    sum1 <- n1*p1
+    sum2 <- n2*p2
+    pstar <- (sum1 + sum2)/(n1 + n2)
+    phat1 <- p1
+    phat2 <- p2
+    z <- (phat2 - phat1)/sqrt((pstar * (1 - pstar)) * (1/n1 + 1/n2))
+    z
+  }
+  if(alternative == "two.sided" | is.null(alternative)){
+    p.upper <- (1 - pnorm(z,lower.tail = T))
+    p.lower <- pnorm(z, lower.tail = F)
+    p <- p.upper + p.lower
+  }
+  if (alternative == "less"){
+    p <- pnorm(z, lower.tail = T)
+  }
+  if (alternative == "greater"){
+    p <- pnorm(z, lower.tail = F)
+  }
+  if (is.null(p2) | is.null(n2)){
+    alpha <- conf.level
+    lower <- phat - qnorm((1-alpha)/2) * sqrt(phat * (1 - phat)/n1)
+    upper <- phat + qnorm((1-alpha)/2) * sqrt(phat * (1 - phat)/n1)
+    ci <- c(lower, upper)
+    ci ## this is only for the one sample test
+  } else {
+    lower.ci <- -1 *((p2 - p1) + 1.96 * sqrt(((p1 * (1 - p1))/n1) + ((p2 * (1 - p2))/n2))) 
+    upper.ci <- -1 *((p2 - p1) - 1.96 * sqrt(((p1 * (1 - p1))/n1) + ((p2 * (1 - p2))/n2)))
+        ci <- c(lower.ci,upper.ci)
+  }
+  STATS <- list(P = p,Z =  z, Confidence_intervals = ci)
+  return(STATS)
 }
-Z.prop.test(.2, 12,.4,2,.3)
-  
+
+   v<- c(1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0)
+   v1 <- c(1, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 
+           1, 0)
+   v2 <- c(1, 1, 0, 0, 1, 1, 1, 1, 0, 1, 0, 1, 1, 1, 0, 1, 0, 1, 1, 1, 1, 1, 0, 
+           0, 1, 1, 0, 1, 1, 1)
+   
+
+mytest <- Z.prop.test(p1 = .6,n1 = 30, p0 = 0.8, conf.level = .95, alternative = "less")
+mytest
+
+prop.test(x = sum(v), n = length(v), conf.level = .95, p = .8, alternative = "less", correct = F)
+
+
+mytest <- Z.prop.test(p1 = mean(v1), n1 = length(v1),p2 = mean(v2), n2 = length(v2),
+          p0 = 0, conf.level = .95, alternative = "two.sided")
+mytest
+prop.test(x = c(sum(v1), sum(v2)), n = c(length(v1), length(v2)), alternative = "two.sided", 
+          correct = FALSE)
+
 
 
 
@@ -91,12 +145,9 @@ f <- "https://raw.githubusercontent.com/difiore/ADA-2019/master/KamilarAndCooper
 d <- read_csv(f, col_names = TRUE)
 head(d)
 
-
-
 ## Create vectors for Longevity and Brain Size
 x1 <- d$Brain_Size_Species_Mean
 y1 <- d$MaxLongevity_m
-
 ## Create vectors for log(Longevity) and log(Brain size)
 x2 <- log(x1)
 y2 <- log(y1)

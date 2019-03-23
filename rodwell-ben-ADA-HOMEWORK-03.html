@@ -192,39 +192,294 @@ $(document).ready(function () {
 </div>
 
 
+<div id="problem-one" class="section level1">
+<h1>Problem One</h1>
+<div id="write-a-simple-r-function-you-call-z.prop.test-that-can-perform-one--or-two-sample-z-tests-for-proportion-data-using-the-following-guidelines." class="section level4">
+<h4>Write a simple R function you call Z.prop.test(), that can perform one- or two-sample Z-tests for proportion data, using the following guidelines.</h4>
+</div>
+<div id="your-function-should-take-the-following-arguments-p1-and-n1-no-default-representing-the-estimated-proportion-and-sample-size-e.g.-based-on-your-sample-data-p2-and-n2-both-defaulting-to-null-that-contain-a-second-samples-proportion-and-sample-size-data-in-the-event-of-a-two-sample-test-p0-no-default-as-the-expected-value-for-the-population-proportion-and-alternative-default-two.sided-and-conf.level-default-0.95-to-be-used-in-the-same-way-as-in-the-function-t.test." class="section level4">
+<h4>Your function should take the following arguments: p1 and n1 (no default) representing the estimated proportion and sample size (e.g., based on your sample data); p2 and n2 (both defaulting to NULL) that contain a second sample’s proportion and sample size data in the event of a two-sample test; p0 (no default) as the expected value for the population proportion; and alternative (default “two.sided”) and conf.level (default 0.95), to be used in the same way as in the function t.test().</h4>
+</div>
+<div id="when-conducting-a-two-sample-test-it-should-be-p1-that-is-tested-as-being-smaller-or-larger-than-p2-when-alternativeless-or-alternativegreater-respectively-the-same-as-in-the-use-of-x-and-y-in-the-function-t.test." class="section level4">
+<h4>When conducting a two-sample test, it should be p1 that is tested as being smaller or larger than p2 when alternative=“less” or alternative=“greater”, respectively, the same as in the use of x and y in the function t.test().</h4>
+</div>
+<div id="the-function-should-perform-a-one-sample-z-test-using-p1-n1-and-p0-if-either-p2-or-n2-or-both-is-null." class="section level4">
+<h4>The function should perform a one-sample Z-test using p1, n1, and p0 if either p2 or n2 (or both) is NULL.</h4>
+</div>
+<div id="the-function-should-contain-a-check-for-the-rules-of-thumb-we-have-talked-about-n5-and-n15-to-ensure-the-validity-of-assuming-the-normal-distribution-in-both-the-one--and-two-sample-settings.-if-this-is-violated-the-function-should-still-complete-but-it-should-also-print-an-appropriate-warning-message." class="section level4">
+<h4>The function should contain a check for the rules of thumb we have talked about (n×π&gt;5 and n×(1−π)&gt;5) to ensure the validity of assuming the normal distribution in both the one- and two-sample settings. If this is violated, the function should still complete, but it should also print an appropriate warning message.</h4>
+</div>
+<div id="the-function-should-return-a-list-containing-the-following-elements-z-the-test-statistic-p-the-appropriate-p-value-and-ci-the-two-sided-ci-with-respect-to-conf.level-around-p1-in-the-case-of-a-one-sample-test-and-around-p2-p1-in-the-case-of-a-two-sample-test.-for-all-test-alternatives-two.sided-greater-less-calculate-symmetric-cis-based-on-quantiles-of-the-normal-distribution-rather-than-worrying-about-calculating-single-limit-confidence-bounds." class="section level4">
+<h4>The function should return a list containing the following elements: Z (the test statistic), P (the appropriate p value), and CI (the two-sided CI with respect to “conf.level” around p1 in the case of a one-sample test and around p2-p1 in the case of a two-sample test). For all test alternatives (“two.sided”, “greater”, “less”), calculate symmetric CIs based on quantiles of the normal distribution rather than worrying about calculating single-limit confidence bounds.</h4>
+</div>
+<div id="code-for-prop-test-function" class="section level2">
+<h2>Code for prop test function</h2>
+<pre class="r"><code>Z.prop.test &lt;- function(p1, n1, p2 = NULL,
+                        n2 = NULL, p0, alternative = &quot;two.sided&quot;,
+                        conf.level = 0.95){
+  if ((n1 * p1 &lt; 5) &amp; (n1 * (1 - p0)&lt; 5)) {
+    warning(&quot;Assumption of normal distribution is not valid&quot;)
+  }
+  if (is.null(p2) | is.null(n2)){
+    phat &lt;- p1
+    pi &lt;- p0
+    n &lt;- n1
+    z &lt;- (phat - pi)/sqrt(pi * (1 - pi)/n)
+    z
+  } else {
+    sum1 &lt;- n1*p1
+    sum2 &lt;- n2*p2
+    pstar &lt;- (sum1 + sum2)/(n1 + n2)
+    phat1 &lt;- p1
+    phat2 &lt;- p2
+    z &lt;- (phat2 - phat1)/sqrt((pstar * (1 - pstar)) * (1/n1 + 1/n2))
+    z
+  }
+  if(alternative == &quot;two.sided&quot; | is.null(alternative)){
+    p.upper &lt;- (1 - pnorm(z,lower.tail = T))
+    p.lower &lt;- pnorm(z, lower.tail = F)
+    p &lt;- p.upper + p.lower  
+  }
+  if(alternative == &quot;two.sided&quot; | is.null(alternative) &amp; (is.null(p2) | is.null(n2))){
+    p.upper &lt;- (1 - pnorm(z,lower.tail = F))
+    p.lower &lt;- pnorm(z, lower.tail = T)
+    p &lt;- p.upper + p.lower  
+  }
+  if (alternative == &quot;less&quot; &amp; (is.null(p2) | is.null(n2))){
+    p &lt;- (pnorm(z, lower.tail = T))
+  }
+  if (alternative == &quot;greater&quot; &amp; (is.null(p2) | is.null(n2))){
+    p &lt;- (pnorm(z, lower.tail = F))
+  }
+  if (alternative == &quot;less&quot; &amp; (!is.null(p2) | !is.null(n2))){
+    p &lt;- 1-(pnorm(z, lower.tail = T))
+  }
+  if (alternative == &quot;greater&quot; &amp; (!is.null(p2) | !is.null(n2))){
+    p &lt;- 1-(pnorm(z, lower.tail = F))
+  }
+
+  if (is.null(p2) | is.null(n2)){ ## Confidence intervals
+    alpha &lt;- conf.level
+    lower &lt;- phat - qnorm((1-alpha)/2) * sqrt(phat * (1 - phat)/n1)
+    upper &lt;- phat + qnorm((1-alpha)/2) * sqrt(phat * (1 - phat)/n1)
+    ci &lt;- c(lower, upper)
+    ci ## this is only for the one sample test
+  } else {
+    lower.ci &lt;- -1 *((p2 - p1) + 1.96 * sqrt(((p1 * (1 - p1))/n1) + ((p2 * (1 - p2))/n2))) 
+    upper.ci &lt;- -1 *((p2 - p1) - 1.96 * sqrt(((p1 * (1 - p1))/n1) + ((p2 * (1 - p2))/n2)))
+        ci &lt;- c(lower.ci,upper.ci)
+  }
+  STATS &lt;- list(P_value = p,Z_score =  z, Confidence_intervals = ci)
+  return(STATS)
+}</code></pre>
+</div>
+<div id="testing-the-code-with-examples-from-the-module" class="section level2">
+<h2>Testing the code with examples from the module</h2>
+<pre class="r"><code>v&lt;- c(1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0)
+v1 &lt;- c(1, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 
+        1, 0)
+v2 &lt;- c(1, 1, 0, 0, 1, 1, 1, 1, 0, 1, 0, 1, 1, 1, 0, 1, 0, 1, 1, 1, 1, 1, 0, 
+        0, 1, 1, 0, 1, 1, 1)
+
+p &lt;- mean(v)
+n &lt;- length(v)
+p1&lt;- mean(v1)
+n1 &lt;- length(v1)
+p2 &lt;- mean(v2)
+n2 = length(v2)</code></pre>
+</div>
+<div id="single-sample-lower-tailed-test" class="section level2">
+<h2>Single sample lower tailed test</h2>
+<pre class="r"><code>mytest &lt;- Z.prop.test(p1 = p, n1 = n, p0 = 0.8, conf.level = .95, alternative = &quot;less&quot;)
+proptest &lt;- prop.test(x = sum(v), n = length(v), conf.level = .95, p = .8, alternative = &quot;less&quot;, correct = F)
+
+mytest</code></pre>
+<pre><code>## $P_value
+## [1] 0.00308495
+## 
+## $Z_score
+## [1] -2.738613
+## 
+## $Confidence_intervals
+## [1] 0.7753045 0.4246955</code></pre>
+<pre class="r"><code>proptest</code></pre>
+<pre><code>## 
+##  1-sample proportions test without continuity correction
+## 
+## data:  sum(v) out of length(v), null probability 0.8
+## X-squared = 7.5, df = 1, p-value = 0.003085
+## alternative hypothesis: true p is less than 0.8
+## 95 percent confidence interval:
+##  0.0000000 0.7328738
+## sample estimates:
+##   p 
+## 0.6</code></pre>
+</div>
+<div id="single-sample-upper-tailed-test" class="section level2">
+<h2>Single sample upper tailed test</h2>
+<pre class="r"><code>mytest &lt;- Z.prop.test(p1 = p, n1 = n, p0 = 0.4, conf.level = .95, alternative = &quot;greater&quot;)
+proptest &lt;- prop.test(x = sum(v), n = length(v), conf.level = .95, p = .4, alternative = &quot;greater&quot;, correct = F)
+
+mytest</code></pre>
+<pre><code>## $P_value
+## [1] 0.01267366
+## 
+## $Z_score
+## [1] 2.236068
+## 
+## $Confidence_intervals
+## [1] 0.7753045 0.4246955</code></pre>
+<pre class="r"><code>proptest</code></pre>
+<pre><code>## 
+##  1-sample proportions test without continuity correction
+## 
+## data:  sum(v) out of length(v), null probability 0.4
+## X-squared = 5, df = 1, p-value = 0.01267
+## alternative hypothesis: true p is greater than 0.4
+## 95 percent confidence interval:
+##  0.4505813 1.0000000
+## sample estimates:
+##   p 
+## 0.6</code></pre>
+</div>
+<div id="single-sample-two-tailed-test" class="section level2">
+<h2>Single sample two tailed test</h2>
+<pre class="r"><code>mytest &lt;- Z.prop.test(p1 = p1, n1 = n1,
+                      p0 = .8, conf.level = .95, alternative = &quot;two.sided&quot;)
+
+proptest &lt;- prop.test(x = sum(v), n = length(v), conf.level = .95, p = .8, alternative = &quot;two.sided&quot;, correct = F)
+
+mytest</code></pre>
+<pre><code>## $P_value
+## [1] 0.002699796
+## 
+## $Z_score
+## [1] -3
+## 
+## $Confidence_intervals
+## [1] 0.7545801 0.3654199</code></pre>
+<pre class="r"><code>proptest</code></pre>
+<pre><code>## 
+##  1-sample proportions test without continuity correction
+## 
+## data:  sum(v) out of length(v), null probability 0.8
+## X-squared = 7.5, df = 1, p-value = 0.00617
+## alternative hypothesis: true p is not equal to 0.8
+## 95 percent confidence interval:
+##  0.4232036 0.7540937
+## sample estimates:
+##   p 
+## 0.6</code></pre>
+</div>
+<div id="two-sample-lower-tailed-test" class="section level2">
+<h2>Two sample lower tailed test</h2>
+<pre class="r"><code>mytest &lt;- Z.prop.test(p1 = p1, n1 = n1, p2 = p2, n2 = n2,
+                      p0 = 0, conf.level = .95, alternative = &quot;less&quot;)
+
+proptest &lt;- prop.test(x = c(sum(v1), sum(v2)), n = c(length(v1), length(v2)), alternative = &quot;less&quot;, 
+                      correct = FALSE)
+
+mytest</code></pre>
+<pre><code>## $P_value
+## [1] 0.1412525
+## 
+## $Z_score
+## [1] 1.074709
+## 
+## $Confidence_intervals
+## [1] -0.3944681  0.1144681</code></pre>
+<pre class="r"><code>proptest</code></pre>
+<pre><code>## 
+##  2-sample test for equality of proportions without continuity
+##  correction
+## 
+## data:  c(sum(v1), sum(v2)) out of c(length(v1), length(v2))
+## X-squared = 1.155, df = 1, p-value = 0.1413
+## alternative hypothesis: less
+## 95 percent confidence interval:
+##  -1.00000000  0.07355243
+## sample estimates:
+## prop 1 prop 2 
+##   0.56   0.70</code></pre>
+</div>
+<div id="two-sample-upper-tailed-test" class="section level2">
+<h2>Two sample upper tailed test</h2>
+<pre class="r"><code>mytest &lt;- Z.prop.test(p1 = mean(v1), n1 = length(v1),p2 = mean(v2), n2 = length(v2),
+                      p0 = 0, conf.level = .95, alternative = &quot;greater&quot;)
+
+proptest &lt;- prop.test(x = c(sum(v1), sum(v2)), n = c(length(v1), length(v2)), alternative = &quot;greater&quot;,
+                      correct = FALSE)
+
+mytest</code></pre>
+<pre><code>## $P_value
+## [1] 0.8587475
+## 
+## $Z_score
+## [1] 1.074709
+## 
+## $Confidence_intervals
+## [1] -0.3944681  0.1144681</code></pre>
+<pre class="r"><code>proptest</code></pre>
+<pre><code>## 
+##  2-sample test for equality of proportions without continuity
+##  correction
+## 
+## data:  c(sum(v1), sum(v2)) out of c(length(v1), length(v2))
+## X-squared = 1.155, df = 1, p-value = 0.8587
+## alternative hypothesis: greater
+## 95 percent confidence interval:
+##  -0.3535524  1.0000000
+## sample estimates:
+## prop 1 prop 2 
+##   0.56   0.70</code></pre>
+</div>
+<div id="two-sample-two-tailed-test" class="section level2">
+<h2>Two Sample two tailed test</h2>
+<pre class="r"><code>mytest &lt;- Z.prop.test(p1 = mean(v1), n1 = length(v1),p2 = mean(v2), n2 = length(v2),
+                      p0 = 0, conf.level = .95, alternative = &quot;two.sided&quot;)
+
+proptest &lt;- prop.test(x = c(sum(v1), sum(v2)), n = c(length(v1), length(v2)), alternative = &quot;two.sided&quot;, 
+                      correct = FALSE)
+
+mytest</code></pre>
+<pre><code>## $P_value
+## [1] 1.717495
+## 
+## $Z_score
+## [1] 1.074709
+## 
+## $Confidence_intervals
+## [1] -0.3944681  0.1144681</code></pre>
+<pre class="r"><code>proptest</code></pre>
+<pre><code>## 
+##  2-sample test for equality of proportions without continuity
+##  correction
+## 
+## data:  c(sum(v1), sum(v2)) out of c(length(v1), length(v2))
+## X-squared = 1.155, df = 1, p-value = 0.2825
+## alternative hypothesis: two.sided
+## 95 percent confidence interval:
+##  -0.3944634  0.1144634
+## sample estimates:
+## prop 1 prop 2 
+##   0.56   0.70</code></pre>
+</div>
+</div>
 <div id="problem-2" class="section level1">
 <h1>PROBLEM 2</h1>
-<div id="the-comparative-primate-dataset-we-have-used-from-kamilar" class="section level4">
-<h4>The comparative primate dataset we have used from Kamilar</h4>
-</div>
-<div id="and-cooper-has-in-it-a-large-number-of-variables-related-to" class="section level4">
-<h4>and Cooper has in it a large number of variables related to</h4>
-</div>
-<div id="life-history-and-body-size.-for-this-exercise-the-end-aim-is" class="section level4">
-<h4>life history and body size. For this exercise, the end aim is</h4>
-</div>
-<div id="to-fit-a-simple-linear-regression-model-to-predict-longevity" class="section level4">
-<h4>to fit a simple linear regression model to predict longevity</h4>
-</div>
-<div id="maxlongevity_m-measured-in-months-from-species-brain-size" class="section level4">
-<h4>(MaxLongevity_m) measured in months from species’ brain size</h4>
-</div>
-<div id="brain_size_species_mean-measured-in-grams.-do-the-following" class="section level4">
-<h4>(Brain_Size_Species_Mean) measured in grams. Do the following</h4>
-</div>
-<div id="for-both-longevitybrain-size-and-loglongevitylogbrain-size." class="section level4">
-<h4>for both longevity~brain size and log(longevity)~log(brain size).</h4>
+<div id="the-comparative-primate-dataset-we-have-used-from-kamilar-and-cooper-has-in-it-a-large-number-of-variables-related-to-life-history-and-body-size.-for-this-exercise-the-end-aim-is-to-fit-a-simple-linear-regression-model-to-predict-longevity-maxlongevity_m-measured-in-months-from-species-brain-size-brain_size_species_mean-measured-in-grams.-do-the-followin-for-both-longevitybrain-size-and-loglongevitylogbrain-size." class="section level4">
+<h4>The comparative primate dataset we have used from Kamilar and Cooper has in it a large number of variables related to life history and body size. For this exercise, the end aim is to fit a simple linear regression model to predict longevity (MaxLongevity_m) measured in months from species’ brain size (Brain_Size_Species_Mean) measured in grams. Do the followin for both longevity~brain size and log(longevity)~log(brain size).</h4>
 </div>
 <div id="prepare-the-data-into-vectors-to-be-used-and-create-linear-models" class="section level2">
 <h2>Prepare the data into vectors to be used and create linear models</h2>
 <pre class="r"><code>library(tidyverse)</code></pre>
-<pre><code>## -- Attaching packages ------------------------------------------------------------ tidyverse 1.2.1 --</code></pre>
+<pre><code>## -- Attaching packages ----------------------------------------------------------------- tidyverse 1.2.1 --</code></pre>
 <pre><code>## v ggplot2 3.1.0     v purrr   0.3.0
 ## v tibble  2.0.1     v dplyr   0.7.8
 ## v tidyr   0.8.2     v stringr 1.3.1
 ## v readr   1.3.1     v forcats 0.3.0</code></pre>
 <pre><code>## Warning: package 'ggplot2' was built under R version 3.5.3</code></pre>
-<pre><code>## -- Conflicts --------------------------------------------------------------- tidyverse_conflicts() --
+<pre><code>## -- Conflicts -------------------------------------------------------------------- tidyverse_conflicts() --
 ## x dplyr::filter() masks stats::filter()
 ## x dplyr::lag()    masks stats::lag()</code></pre>
 <pre class="r"><code>library(readr)
