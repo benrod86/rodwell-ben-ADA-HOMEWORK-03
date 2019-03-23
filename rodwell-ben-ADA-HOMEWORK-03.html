@@ -211,8 +211,8 @@ $(document).ready(function () {
 </div>
 <div id="the-function-should-return-a-list-containing-the-following-elements-z-the-test-statistic-p-the-appropriate-p-value-and-ci-the-two-sided-ci-with-respect-to-conf.level-around-p1-in-the-case-of-a-one-sample-test-and-around-p2-p1-in-the-case-of-a-two-sample-test.-for-all-test-alternatives-two.sided-greater-less-calculate-symmetric-cis-based-on-quantiles-of-the-normal-distribution-rather-than-worrying-about-calculating-single-limit-confidence-bounds." class="section level2">
 <h2>The function should return a list containing the following elements: Z (the test statistic), P (the appropriate p value), and CI (the two-sided CI with respect to “conf.level” around p1 in the case of a one-sample test and around p2-p1 in the case of a two-sample test). For all test alternatives (“two.sided”, “greater”, “less”), calculate symmetric CIs based on quantiles of the normal distribution rather than worrying about calculating single-limit confidence bounds.</h2>
-<div id="code-for-prop-test-function" class="section level3">
-<h3>Code for prop test function</h3>
+<div id="code-for-prop-test" class="section level3">
+<h3>Code for prop test</h3>
 <pre class="r"><code>Z.prop.test &lt;- function(p1, n1, p2 = NULL,
                         n2 = NULL, p0, alternative = &quot;two.sided&quot;,
                         conf.level = 0.95){
@@ -220,24 +220,17 @@ $(document).ready(function () {
     warning(&quot;Assumption of normal distribution is not valid&quot;)
   }
   if (is.null(p2) | is.null(n2)){ ## z-score for one sample
-    phat &lt;- p1
-    pi &lt;- p0
-    n &lt;- n1
-    z &lt;- (phat - pi)/sqrt(pi * (1 - pi)/n)
+    z &lt;- (p1 - p0)/sqrt(p0 * (1 - p0)/n1)
     z
   } else { ## z-score for two samples
-    sum1 &lt;- n1*p1
-    sum2 &lt;- n2*p2
-    pstar &lt;- (sum1 + sum2)/(n1 + n2)
-    phat1 &lt;- p1
-    phat2 &lt;- p2
-    z &lt;- (phat2 - phat1)/sqrt((pstar * (1 - pstar)) * (1/n1 + 1/n2))
+    pstar&lt;-(p1*n1+p2*n2)/(n1+n2)
+    z&lt;-((p1-p2-p0)/sqrt(pstar*(1-pstar)*((1/n1)+(1/n2))))
     z
   }
-  if(alternative == &quot;two.sided&quot; | is.null(alternative) &amp; !is.null(p2)){
-    p.upper &lt;- (1 - pnorm(z,lower.tail = T))
-    p.lower &lt;- pnorm(z, lower.tail = F)
-    p &lt;- p.upper + p.lower  
+  if(alternative == &quot;two.sided&quot; | is.null(alternative) ){
+    p.upper&lt;- 1-pnorm(abs(z), lower.tail = TRUE)
+    p.lower&lt;- pnorm(abs(z), lower.tail = FALSE)
+    p&lt;- p.upper+p.lower
   }
   if (alternative == &quot;less&quot; &amp; (is.null(p2) | is.null(n2))){
     p &lt;- (pnorm(z, lower.tail = T))
@@ -246,16 +239,16 @@ $(document).ready(function () {
     p &lt;- (pnorm(z, lower.tail = F))
   }
   if (alternative == &quot;less&quot; &amp; (!is.null(p2) | !is.null(n2))){
-    p &lt;- (pnorm(z, lower.tail = T))
+    p &lt;- (pnorm(z, lower.tail = F))
   }
   if (alternative == &quot;greater&quot; &amp; (!is.null(p2) | !is.null(n2))){
-    p &lt;- (pnorm(z, lower.tail = F))
+    p &lt;- (pnorm(z, lower.tail = T))
   }
 
   if (is.null(p2) | is.null(n2)){ ## Confidence intervals
     alpha &lt;- conf.level
-    lower &lt;- phat + qnorm((1-alpha)/2) * sqrt(phat * (1 - phat)/n1)
-    upper &lt;- phat - qnorm((1-alpha)/2) * sqrt(phat * (1 - phat)/n1)
+    lower &lt;- p1 + qnorm((1-alpha)/2) * sqrt(p1 * (1 - p1)/n1)
+    upper &lt;- p1 - qnorm((1-alpha)/2) * sqrt(p1 * (1 - p1)/n1)
     ci &lt;- c(lower, upper)
     ci ## this is only for the one sample tests
   } else {
@@ -338,20 +331,20 @@ mytest</code></pre>
 </div>
 <div id="single-sample-two-tailed-test" class="section level3">
 <h3>Single sample two tailed test</h3>
-<pre class="r"><code>mytest &lt;- Z.prop.test(p1 = p1, n1 = n1, p0 = .8, conf.level = .95, alternative = &quot;two.sided&quot;)
+<pre class="r"><code>mytest &lt;- Z.prop.test(p1 = p, n1 = n, p0 = .8, conf.level = .95, alternative = &quot;two.sided&quot;)
 
 proptest &lt;- prop.test(x = sum(v), n = length(v), conf.level = .95, p = .8,
   alternative = &quot;two.sided&quot;, correct = F)
 
 mytest #### Cannot get these to match, not sure why</code></pre>
 <pre><code>## $P_value
-## [1] 1.9973
+## [1] 0.006169899
 ## 
 ## $Z_score
-## [1] -3
+## [1] -2.738613
 ## 
 ## $Confidence_intervals
-## [1] 0.3654199 0.7545801</code></pre>
+## [1] 0.4246955 0.7753045</code></pre>
 <pre class="r"><code>proptest    </code></pre>
 <pre><code>## 
 ##  1-sample proportions test without continuity correction
@@ -378,7 +371,7 @@ mytest</code></pre>
 ## [1] 0.8587475
 ## 
 ## $Z_score
-## [1] 1.074709
+## [1] -1.074709
 ## 
 ## $Confidence_intervals
 ## [1] -0.1144681  0.3944681</code></pre>
@@ -398,7 +391,7 @@ mytest</code></pre>
 </div>
 <div id="two-sample-upper-tailed-test" class="section level3">
 <h3>Two sample upper tailed test</h3>
-<pre class="r"><code>mytest &lt;- Z.prop.test(p1 = mean(v1), n1 = length(v1),p2 = mean(v2), n2 = length(v2),
+<pre class="r"><code>mytest &lt;- Z.prop.test(p1 = p1, n1 = n1,p2 = p2, n2 = n2,
                       p0 = 0, conf.level = .95, alternative = &quot;greater&quot;)
 
 proptest &lt;- prop.test(x = c(sum(v2), sum(v1)), n = c(length(v2), length(v1)), alternative = &quot;greater&quot;,
@@ -409,7 +402,7 @@ mytest</code></pre>
 ## [1] 0.1412525
 ## 
 ## $Z_score
-## [1] 1.074709
+## [1] -1.074709
 ## 
 ## $Confidence_intervals
 ## [1] -0.1144681  0.3944681</code></pre>
@@ -429,20 +422,20 @@ mytest</code></pre>
 </div>
 <div id="two-sample-two-tailed-test" class="section level3">
 <h3>Two Sample two tailed test</h3>
-<pre class="r"><code>mytest &lt;- Z.prop.test(p1 = mean(v), n1 = length(v1),p2 = mean(v2), n2 = length(v2),
-                      p0 = 0, conf.level = .95, alternative = &quot;two.sided&quot;)
+<pre class="r"><code>mytest &lt;- Z.prop.test(p1 = p1, n1 = n1,p2 = p2, n2 = n2,
+                      p0 = 0, conf.level = .95)
 
 proptest &lt;- prop.test(x = c(sum(v2), sum(v1)), n = c(length(v2), length(v1)), alternative =     &quot;two.sided&quot;, correct = FALSE)
 
 mytest  #### Cannot get these to match, not sure why</code></pre>
 <pre><code>## $P_value
-## [1] 0.437409
+## [1] 0.2825049
 ## 
 ## $Z_score
-## [1] 0.7765759
+## [1] -1.074709
 ## 
 ## $Confidence_intervals
-## [1] -0.1525283  0.3525283</code></pre>
+## [1] -0.1144681  0.3944681</code></pre>
 <pre class="r"><code>proptest</code></pre>
 <pre><code>## 
 ##  2-sample test for equality of proportions without continuity
