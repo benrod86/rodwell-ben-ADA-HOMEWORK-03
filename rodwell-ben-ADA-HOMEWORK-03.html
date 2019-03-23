@@ -235,14 +235,9 @@ $(document).ready(function () {
     z &lt;- (phat2 - phat1)/sqrt((pstar * (1 - pstar)) * (1/n1 + 1/n2))
     z
   }
-  if(alternative == &quot;two.sided&quot; | is.null(alternative)){
+  if(alternative == &quot;two.sided&quot; | is.null(alternative) &amp; !is.null(p2)){
     p.upper &lt;- (1 - pnorm(z,lower.tail = T))
     p.lower &lt;- pnorm(z, lower.tail = F)
-    p &lt;- p.upper + p.lower  
-  }
-  if(alternative == &quot;two.sided&quot; | is.null(alternative) &amp; (is.null(p2) | is.null(n2))){
-    p.upper &lt;- (1 - pnorm(z,lower.tail = F))
-    p.lower &lt;- pnorm(z, lower.tail = T)
     p &lt;- p.upper + p.lower  
   }
   if (alternative == &quot;less&quot; &amp; (is.null(p2) | is.null(n2))){
@@ -273,8 +268,8 @@ $(document).ready(function () {
   return(STATS)
 }</code></pre>
 </div>
-<div id="testing-the-code-with-examples-from-the-module" class="section level2">
-<h2>Testing the code with examples from the module</h2>
+<div id="testing-the-code-with-examples" class="section level2">
+<h2>Testing the code with examples</h2>
 <pre class="r"><code>v&lt;- c(1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0)
 v1 &lt;- c(1, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 
         1, 0)
@@ -351,14 +346,14 @@ proptest &lt;- prop.test(x = sum(v), n = length(v), conf.level = .95, p = .8, al
 
 mytest</code></pre>
 <pre><code>## $P_value
-## [1] 0.002699796
+## [1] 1.9973
 ## 
 ## $Z_score
 ## [1] -3
 ## 
 ## $Confidence_intervals
 ## [1] 0.7545801 0.3654199</code></pre>
-<pre class="r"><code>proptest</code></pre>
+<pre class="r"><code>proptest     #### These still do not match ????????</code></pre>
 <pre><code>## 
 ##  1-sample proportions test without continuity correction
 ## 
@@ -388,7 +383,7 @@ mytest</code></pre>
 ## 
 ## $Confidence_intervals
 ## [1] -0.3944681  0.1144681</code></pre>
-<pre class="r"><code>proptest</code></pre>
+<pre class="r"><code>proptest  </code></pre>
 <pre><code>## 
 ##  2-sample test for equality of proportions without continuity
 ##  correction
@@ -443,7 +438,35 @@ proptest &lt;- prop.test(x = c(sum(v1), sum(v2)), n = c(length(v1), length(v2)),
 
 mytest</code></pre>
 <pre><code>## $P_value
-## [1] 1.717495
+## [1] 0.2825049
+## 
+## $Z_score
+## [1] 1.074709
+## 
+## $Confidence_intervals
+## [1] -0.3944681  0.1144681</code></pre>
+<pre class="r"><code>proptest</code></pre>
+<pre><code>## 
+##  2-sample test for equality of proportions without continuity
+##  correction
+## 
+## data:  c(sum(v1), sum(v2)) out of c(length(v1), length(v2))
+## X-squared = 1.155, df = 1, p-value = 0.2825
+## alternative hypothesis: two.sided
+## 95 percent confidence interval:
+##  -0.3944634  0.1144634
+## sample estimates:
+## prop 1 prop 2 
+##   0.56   0.70</code></pre>
+<pre class="r"><code>mytest &lt;- Z.prop.test(p1 = mean(v1), n1 = length(v1),p2 = mean(v2), n2 = length(v2),
+                      p0 = 0, conf.level = .95)
+
+proptest &lt;- prop.test(x = c(sum(v1), sum(v2)), n = c(length(v1), length(v2)), alternative = &quot;two.sided&quot;, 
+                      correct = FALSE)
+
+mytest</code></pre>
+<pre><code>## $P_value
+## [1] 0.2825049
 ## 
 ## $Z_score
 ## [1] 1.074709
