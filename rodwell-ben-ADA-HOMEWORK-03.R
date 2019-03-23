@@ -653,3 +653,15 @@ proptest <- prop.test(x = c(sum(v2), sum(v1)), n = c(length(v2), length(v1)), al
 mytest
 proptest
 ```
+
+
+
+
+
+
+
+
+
+
+
+
