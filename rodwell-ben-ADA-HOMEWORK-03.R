@@ -61,17 +61,24 @@ Z.prop.test <- function(p1, n1, p2 = NULL,
     z
   }
   if(alternative == "two.sided" | is.null(alternative)){
-    p.upper <- (1 - pnorm(z,lower.tail = T))
-    p.lower <- pnorm(z, lower.tail = F)
-    p <- p.upper + p.lower
+    p <- (1 - pnorm(z,lower.tail = F))
+    p.lower <- pnorm(z, lower.tail = T)
+     p <- p  
   }
-  if (alternative == "less"){
-    p <- pnorm(z, lower.tail = T)
+  if (alternative == "less" & (is.null(p2) | is.null(n2))){
+    p <- (pnorm(z, lower.tail = T))
   }
-  if (alternative == "greater"){
-    p <- pnorm(z, lower.tail = F)
+  if (alternative == "greater" & (is.null(p2) | is.null(n2))){
+    p <- (pnorm(z, lower.tail = F))
   }
-  if (is.null(p2) | is.null(n2)){
+  if (alternative == "less" & (!is.null(p2) | !is.null(n2))){
+    p <- 1-(pnorm(z, lower.tail = T))
+  }
+  if (alternative == "greater" & (!is.null(p2) | !is.null(n2))){
+    p <- 1-(pnorm(z, lower.tail = F))
+  }
+
+  if (is.null(p2) | is.null(n2)){ ## Confidence intervals
     alpha <- conf.level
     lower <- phat - qnorm((1-alpha)/2) * sqrt(phat * (1 - phat)/n1)
     upper <- phat + qnorm((1-alpha)/2) * sqrt(phat * (1 - phat)/n1)
@@ -86,26 +93,88 @@ Z.prop.test <- function(p1, n1, p2 = NULL,
   return(STATS)
 }
 
-   v<- c(1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0)
-   v1 <- c(1, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 
-           1, 0)
-   v2 <- c(1, 1, 0, 0, 1, 1, 1, 1, 0, 1, 0, 1, 1, 1, 0, 1, 0, 1, 1, 1, 1, 1, 0, 
-           0, 1, 1, 0, 1, 1, 1)
-   
 
-mytest <- Z.prop.test(p1 = .6,n1 = 30, p0 = 0.8, conf.level = .95, alternative = "less")
+## Testing the code with examples from the module
+## Single sample lower tailed test
+
+```{r}
+v<- c(1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0)
+v1 <- c(1, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 
+        1, 0)
+v2 <- c(1, 1, 0, 0, 1, 1, 1, 1, 0, 1, 0, 1, 1, 1, 0, 1, 0, 1, 1, 1, 1, 1, 0, 
+        0, 1, 1, 0, 1, 1, 1)
+
+p <- mean(v)
+n <- length(v)
+p1<- mean(v1)
+n1 <- length(v1)
+p2 <- mean(v2)
+n2 = length(v2)
+
+mytest <- Z.prop.test(p1 = p, n1 = n, p0 = 0.8, conf.level = .95, alternative = "less")
+proptest <- prop.test(x = sum(v), n = length(v), conf.level = .95, p = .8, alternative = "less", correct = F)
+
 mytest
+proptest
+```
 
-prop.test(x = sum(v), n = length(v), conf.level = .95, p = .8, alternative = "less", correct = F)
+## Single sample upper tailed test
+```{r}
+mytest <- Z.prop.test(p1 = p, n1 = n, p0 = 0.4, conf.level = .95, alternative = "greater")
+proptest <- prop.test(x = sum(v), n = length(v), conf.level = .95, p = .4, alternative = "greater", correct = F)
 
+mytest
+proptest
+```
 
+## Single sample two tailed test
+```{r}
+mytest <- Z.prop.test(p1 = p1, n1 = n1,
+                      p0 = .8, conf.level = .95, alternative = "two.sided")
+
+proptest <- prop.test(x = sum(v), n = length(v), conf.level = .95, p = .8, alternative = "two.sided", correct = F)
+
+mytest
+proptest
+```
+
+## Two sample lower tailed test
+```{r}
+mytest <- Z.prop.test(p1 = p1, n1 = n1, p2 = p2, n2 = n2,
+                      p0 = 0, conf.level = .95, alternative = "less")
+
+proptest <- prop.test(x = c(sum(v1), sum(v2)), n = c(length(v1), length(v2)), alternative = "less", 
+                      correct = FALSE)
+
+mytest
+proptest
+```
+
+## Two sample upper tailed test
+```{r}
 mytest <- Z.prop.test(p1 = mean(v1), n1 = length(v1),p2 = mean(v2), n2 = length(v2),
-          p0 = 0, conf.level = .95, alternative = "two.sided")
+                      p0 = 0, conf.level = .95, alternative = "greater")
+
+proptest <- prop.test(x = c(sum(v1), sum(v2)), n = c(length(v1), length(v2)), alternative = "greater",
+                      correct = FALSE)
+
 mytest
-prop.test(x = c(sum(v1), sum(v2)), n = c(length(v1), length(v2)), alternative = "two.sided", 
-          correct = FALSE)
+proptest
+```
 
 
+
+## Two Sample two tailed test
+```{r}
+mytest <- Z.prop.test(p1 = mean(v1), n1 = length(v1),p2 = mean(v2), n2 = length(v2),
+                      p0 = 0, conf.level = .95, alternative = "two.sided")
+
+proptest <- prop.test(x = c(sum(v1), sum(v2)), n = c(length(v1), length(v2)), alternative = "two.sided", 
+                      correct = FALSE)
+
+mytest
+proptest
+```
 
 
 
