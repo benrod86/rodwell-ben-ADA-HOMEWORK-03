@@ -497,3 +497,159 @@ boxplot(d$MaxLongevity_m)
 
 boxplot(log(d$Brain_Size_Species_Mean))
 boxplot(log(d$MaxLongevity_m))
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+## Code for prop test function
+```{r}
+Z.prop.test <- function(p1, n1, p2 = NULL,
+                        n2 = NULL, p0, alternative = "two.sided",
+                        conf.level = 0.95){
+  if ((n1 * p1 < 5) & (n1 * (1 - p0)< 5)) {
+    warning("Assumption of normal distribution is not valid")
+  }
+  if (is.null(p2) | is.null(n2)){
+    phat <- p1
+    pi <- p0
+    n <- n1
+    z <- (phat - pi)/sqrt(pi * (1 - pi)/n)
+    z
+  } else {
+    sum1 <- n1*p1
+    sum2 <- n2*p2
+    pstar <- (sum1 + sum2)/(n1 + n2)
+    phat1 <- p1
+    phat2 <- p2
+    z <- (phat2 - phat1)/sqrt((pstar * (1 - pstar)) * (1/n1 + 1/n2))
+    z
+  }
+  if(alternative == "two.sided" | is.null(alternative) & !is.null(p2)){
+    p.upper <- (1 - pnorm(z,lower.tail = T))
+    p.lower <- pnorm(z, lower.tail = F)
+    p <- p.upper + p.lower  
+  }
+  if (alternative == "less" & (is.null(p2) | is.null(n2))){
+    p <- (pnorm(z, lower.tail = T))
+  }
+  if (alternative == "greater" & (is.null(p2) | is.null(n2))){
+    p <- (pnorm(z, lower.tail = F))
+  }
+  if (alternative == "less" & (!is.null(p2) | !is.null(n2))){
+    p <- (pnorm(z, lower.tail = T))
+  }
+  if (alternative == "greater" & (!is.null(p2) | !is.null(n2))){
+    p <- (pnorm(z, lower.tail = F))
+  }
+  
+  if (is.null(p2) | is.null(n2)){ ## Confidence intervals
+    alpha <- conf.level
+    lower <- phat + qnorm((1-alpha)/2) * sqrt(phat * (1 - phat)/n1)
+    upper <- phat - qnorm((1-alpha)/2) * sqrt(phat * (1 - phat)/n1)
+    ci <- c(lower, upper)
+    ci ## this is only for the one sample test
+  } else {
+    lower.ci <- ((p2 - p1) - 1.96 * sqrt(((p1 * (1 - p1))/n1) + ((p2 * (1 - p2))/n2))) 
+    upper.ci <- ((p2 - p1) + 1.96 * sqrt(((p1 * (1 - p1))/n1) + ((p2 * (1 - p2))/n2)))
+    ci <- c(lower.ci,upper.ci)
+  }
+  STATS <- list(P_value = p,Z_score =  z, Confidence_intervals = ci)
+  return(STATS)
+}
+```
+
+## Testing the code with examples
+```{r}
+v<- c(1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0)
+v1 <- c(1, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 
+        1, 0)
+v2 <- c(1, 1, 0, 0, 1, 1, 1, 1, 0, 1, 0, 1, 1, 1, 0, 1, 0, 1, 1, 1, 1, 1, 0, 
+        0, 1, 1, 0, 1, 1, 1)
+
+p <- mean(v)
+n <- length(v)
+p1<- mean(v1)
+n1 <- length(v1)
+p2 <- mean(v2)
+n2 = length(v2)
+```
+## Single sample lower tailed test
+```{r}
+mytest <- Z.prop.test(p1 = p, n1 = n, p0 = 0.8, conf.level = .95, alternative = "less")
+proptest <- prop.test(x = sum(v), n = length(v), conf.level = .95, p = .8, alternative = "less", correct = F)
+
+mytest
+proptest
+```
+
+## Single sample upper tailed test
+```{r}
+mytest <- Z.prop.test(p1 = p, n1 = n, p0 = 0.4, conf.level = .95, alternative = "greater")
+proptest <- prop.test(x = sum(v), n = length(v), conf.level = .95, p = .4, alternative = "greater", correct = F)
+
+mytest
+proptest
+```
+
+## Single sample two tailed test
+```{r}
+mytest <- Z.prop.test(p1 = p1, n1 = n1, p0 = .8, conf.level = .95, alternative = "two.sided")
+
+proptest <- prop.test(x = sum(v), n = length(v), conf.level = .95, p = .8,
+                      alternative = "two.sided", correct = F)
+
+mytest
+proptest     #### These still do not match ????????
+```
+
+## Two sample lower tailed test
+```{r}
+mytest <- Z.prop.test(p1 = p1, n1 = n1, p2 = p2, n2 = n2,
+                      p0 = 0, conf.level = .95, alternative = "less")
+
+proptest <- prop.test(x = c(sum(v2), sum(v1)), n = c(length(v2), length(v1)), alternative = "less", 
+                      correct = FALSE)
+
+mytest
+proptest  
+```
+
+## Two sample upper tailed test
+```{r}
+mytest <- Z.prop.test(p1 = mean(v1), n1 = length(v1),p2 = mean(v2), n2 = length(v2),
+                      p0 = 0, conf.level = .95, alternative = "greater")
+
+proptest <- prop.test(x = c(sum(v2), sum(v1)), n = c(length(v2), length(v1)), alternative = "greater",
+                      correct = FALSE)
+
+mytest
+proptest
+```
+
+## Two Sample two tailed test
+```{r}
+mytest <- Z.prop.test(p1 = mean(v), n1 = length(v1),p2 = mean(v2), n2 = length(v2),
+                      p0 = 0, conf.level = .95, alternative = "two.sided")
+
+proptest <- prop.test(x = c(sum(v2), sum(v1)), n = c(length(v2), length(v1)), alternative =     "two.sided", correct = FALSE)
+
+mytest
+proptest
+```

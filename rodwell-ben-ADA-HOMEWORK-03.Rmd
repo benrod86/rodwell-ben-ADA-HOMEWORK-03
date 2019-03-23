@@ -11,20 +11,20 @@ knitr::opts_chunk$set(echo = TRUE)
 
 
 # Problem One
-#### Write a simple R function you call Z.prop.test(), that can perform one- or two-sample Z-tests for proportion data, using the following guidelines.
+## Write a simple R function you call Z.prop.test(), that can perform one- or two-sample Z-tests for proportion data, using the following guidelines.
 
-#### Your function should take the following arguments: p1 and n1 (no default) representing the estimated proportion and sample size (e.g., based on your sample data); p2 and n2 (both defaulting to NULL) that contain a second sample’s proportion and sample size data in the event of a two-sample test; p0 (no default) as the expected value for the population proportion; and alternative (default “two.sided”) and conf.level (default 0.95), to be used in the same way as in the function t.test().
+## Your function should take the following arguments: p1 and n1 (no default) representing the estimated proportion and sample size (e.g., based on your sample data); p2 and n2 (both defaulting to NULL) that contain a second sample’s proportion and sample size data in the event of a two-sample test; p0 (no default) as the expected value for the population proportion; and alternative (default “two.sided”) and conf.level (default 0.95), to be used in the same way as in the function t.test().
 
-#### When conducting a two-sample test, it should be p1 that is tested as being smaller or larger than p2 when alternative=“less” or alternative=“greater”, respectively, the same as in the use of x and y in the function t.test().
+## When conducting a two-sample test, it should be p1 that is tested as being smaller or larger than p2 when alternative=“less” or alternative=“greater”, respectively, the same as in the use of x and y in the function t.test().
 
-#### The function should perform a one-sample Z-test using p1, n1, and p0 if either p2 or n2 (or both) is NULL.
+## The function should perform a one-sample Z-test using p1, n1, and p0 if either p2 or n2 (or both) is NULL.
 
-#### The function should contain a check for the rules of thumb we have talked about (n×π>5 and n×(1−π)>5) to ensure the validity of assuming the normal distribution in both the one- and two-sample settings. If this is violated, the function should still complete, but it should also print an appropriate warning message.
+## The function should contain a check for the rules of thumb we have talked about (n×π>5 and n×(1−π)>5) to ensure the validity of assuming the normal distribution in both the one- and two-sample settings. If this is violated, the function should still complete, but it should also print an appropriate warning message.
 
-#### The function should return a list containing the following elements: Z (the test statistic), P (the appropriate p value), and CI (the two-sided CI with respect to “conf.level” around p1 in the case of a one-sample test and around p2-p1 in the case of a two-sample test). For all test alternatives (“two.sided”, “greater”, “less”), calculate symmetric CIs based on quantiles of the normal distribution rather than worrying about calculating single-limit confidence bounds.
+## The function should return a list containing the following elements: Z (the test statistic), P (the appropriate p value), and CI (the two-sided CI with respect to “conf.level” around p1 in the case of a one-sample test and around p2-p1 in the case of a two-sample test). For all test alternatives (“two.sided”, “greater”, “less”), calculate symmetric CIs based on quantiles of the normal distribution rather than worrying about calculating single-limit confidence bounds.
 
 
-## Code for prop test function
+### Code for prop test function
 ```{r}
 Z.prop.test <- function(p1, n1, p2 = NULL,
                         n2 = NULL, p0, alternative = "two.sided",
@@ -32,13 +32,13 @@ Z.prop.test <- function(p1, n1, p2 = NULL,
   if ((n1 * p1 < 5) & (n1 * (1 - p0)< 5)) {
     warning("Assumption of normal distribution is not valid")
   }
-  if (is.null(p2) | is.null(n2)){
+  if (is.null(p2) | is.null(n2)){ ## z-score for one sample
     phat <- p1
     pi <- p0
     n <- n1
     z <- (phat - pi)/sqrt(pi * (1 - pi)/n)
     z
-  } else {
+  } else { ## z-score for two samples
     sum1 <- n1*p1
     sum2 <- n2*p2
     pstar <- (sum1 + sum2)/(n1 + n2)
@@ -59,29 +59,29 @@ Z.prop.test <- function(p1, n1, p2 = NULL,
     p <- (pnorm(z, lower.tail = F))
   }
   if (alternative == "less" & (!is.null(p2) | !is.null(n2))){
-    p <- 1-(pnorm(z, lower.tail = T))
+    p <- (pnorm(z, lower.tail = T))
   }
   if (alternative == "greater" & (!is.null(p2) | !is.null(n2))){
-    p <- 1-(pnorm(z, lower.tail = F))
+    p <- (pnorm(z, lower.tail = F))
   }
 
   if (is.null(p2) | is.null(n2)){ ## Confidence intervals
     alpha <- conf.level
-    lower <- phat - qnorm((1-alpha)/2) * sqrt(phat * (1 - phat)/n1)
-    upper <- phat + qnorm((1-alpha)/2) * sqrt(phat * (1 - phat)/n1)
+    lower <- phat + qnorm((1-alpha)/2) * sqrt(phat * (1 - phat)/n1)
+    upper <- phat - qnorm((1-alpha)/2) * sqrt(phat * (1 - phat)/n1)
     ci <- c(lower, upper)
-    ci ## this is only for the one sample test
+    ci ## this is only for the one sample tests
   } else {
-    lower.ci <- -1 *((p2 - p1) + 1.96 * sqrt(((p1 * (1 - p1))/n1) + ((p2 * (1 - p2))/n2))) 
-    upper.ci <- -1 *((p2 - p1) - 1.96 * sqrt(((p1 * (1 - p1))/n1) + ((p2 * (1 - p2))/n2)))
-        ci <- c(lower.ci,upper.ci)
+    lower.ci <- ((p2 - p1) - 1.96 * sqrt(((p1 * (1 - p1))/n1) + ((p2 * (1 - p2))/n2))) 
+    upper.ci <- ((p2 - p1) + 1.96 * sqrt(((p1 * (1 - p1))/n1) + ((p2 * (1 - p2))/n2)))
+        ci <- c(lower.ci,upper.ci)  ## this is for the two sample tests
   }
   STATS <- list(P_value = p,Z_score =  z, Confidence_intervals = ci)
   return(STATS)
 }
 ```
 
-## Testing the code with examples
+### Testing the code with examples
 ```{r}
 v<- c(1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0)
 v1 <- c(1, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 
@@ -97,7 +97,7 @@ p2 <- mean(v2)
 n2 = length(v2)
 ```
 
-## Single sample lower tailed test
+### Single sample lower tailed test
 ```{r}
 mytest <- Z.prop.test(p1 = p, n1 = n, p0 = 0.8, conf.level = .95, alternative = "less")
 proptest <- prop.test(x = sum(v), n = length(v), conf.level = .95, p = .8, alternative = "less", correct = F)
@@ -106,7 +106,7 @@ mytest
 proptest
 ```
 
-## Single sample upper tailed test
+### Single sample upper tailed test
 ```{r}
 mytest <- Z.prop.test(p1 = p, n1 = n, p0 = 0.4, conf.level = .95, alternative = "greater")
 proptest <- prop.test(x = sum(v), n = length(v), conf.level = .95, p = .4, alternative = "greater", correct = F)
@@ -115,68 +115,60 @@ mytest
 proptest
 ```
 
-## Single sample two tailed test
+### Single sample two tailed test
 ```{r}
-mytest <- Z.prop.test(p1 = p1, n1 = n1,
-                      p0 = .8, conf.level = .95, alternative = "two.sided")
+mytest <- Z.prop.test(p1 = p1, n1 = n1, p0 = .8, conf.level = .95, alternative = "two.sided")
 
-proptest <- prop.test(x = sum(v), n = length(v), conf.level = .95, p = .8, alternative = "two.sided", correct = F)
+proptest <- prop.test(x = sum(v), n = length(v), conf.level = .95, p = .8,
+  alternative = "two.sided", correct = F)
 
-mytest
-proptest     #### These still do not match ????????
+mytest #### Cannot get these to match, not sure why
+proptest    
 ```
 
-## Two sample lower tailed test
+### Two sample lower tailed test
 ```{r}
 mytest <- Z.prop.test(p1 = p1, n1 = n1, p2 = p2, n2 = n2,
                       p0 = 0, conf.level = .95, alternative = "less")
 
-proptest <- prop.test(x = c(sum(v1), sum(v2)), n = c(length(v1), length(v2)), alternative = "less", 
+proptest <- prop.test(x = c(sum(v2), sum(v1)), n = c(length(v2), length(v1)), alternative = "less", 
                       correct = FALSE)
 
 mytest
 proptest  
 ```
 
-## Two sample upper tailed test
+### Two sample upper tailed test
 ```{r}
 mytest <- Z.prop.test(p1 = mean(v1), n1 = length(v1),p2 = mean(v2), n2 = length(v2),
                       p0 = 0, conf.level = .95, alternative = "greater")
 
-proptest <- prop.test(x = c(sum(v1), sum(v2)), n = c(length(v1), length(v2)), alternative = "greater",
+proptest <- prop.test(x = c(sum(v2), sum(v1)), n = c(length(v2), length(v1)), alternative = "greater",
                       correct = FALSE)
 
 mytest
 proptest
 ```
 
-## Two Sample two tailed test
+### Two Sample two tailed test
 ```{r}
-mytest <- Z.prop.test(p1 = mean(v1), n1 = length(v1),p2 = mean(v2), n2 = length(v2),
+mytest <- Z.prop.test(p1 = mean(v), n1 = length(v1),p2 = mean(v2), n2 = length(v2),
                       p0 = 0, conf.level = .95, alternative = "two.sided")
 
-proptest <- prop.test(x = c(sum(v1), sum(v2)), n = c(length(v1), length(v2)), alternative = "two.sided", 
-                      correct = FALSE)
+proptest <- prop.test(x = c(sum(v2), sum(v1)), n = c(length(v2), length(v1)), alternative =     "two.sided", correct = FALSE)
 
-mytest
+mytest  #### Cannot get these to match, not sure why
 proptest
 ```
 
-```{r}
-mytest <- Z.prop.test(p1 = mean(v1), n1 = length(v1),p2 = mean(v2), n2 = length(v2),
-                      p0 = 0, conf.level = .95)
 
-proptest <- prop.test(x = c(sum(v1), sum(v2)), n = c(length(v1), length(v2)), alternative = "two.sided", 
-                      correct = FALSE)
 
-mytest
-proptest
-```
+
 
 #  PROBLEM 2 
-#### The comparative primate dataset we have used from Kamilar and Cooper has in it a large number of variables related to life history and body size. For this exercise, the end aim is to fit a simple linear regression model to predict longevity (MaxLongevity_m) measured in months from species' brain size (Brain_Size_Species_Mean) measured in grams. Do the followin for both longevity~brain size and log(longevity)~log(brain size).
+## The comparative primate dataset we have used from Kamilar and Cooper has in it a large number of variables related to life history and body size. For this exercise, the end aim is to fit a simple linear regression model to predict longevity (MaxLongevity_m) measured in months from species' brain size (Brain_Size_Species_Mean) measured in grams. Do the followin for both longevity~brain size and log(longevity)~log(brain size).
 
-## Prepare the data into vectors to be used and create linear models
+### Prepare the data into vectors to be used and create linear models
 ```{r}
 library(tidyverse)
 library(readr)
@@ -185,33 +177,34 @@ d <- read_csv(f, col_names = TRUE)
 head(d)
 ```
 
+### Create vectors for Longevity and Brain Size
 ```{r}
-## Create vectors for Longevity and Brain Size
+
 x1 <- d$Brain_Size_Species_Mean
 y1 <- d$MaxLongevity_m
 
-## Create vectors for log(Longevity) and log(Brain size)
 x2 <- log(x1)
 y2 <- log(y1)
+```
 
-## Linear regression for Longevity and Brain Size
+### Linear regression for Longevity and Brain Size
+```{r}
 lb <- lm(data = d,  y1 ~ x1)
 lb
+```
 
-## Linear regression forlog transformed Longevity and Brain Size
+
+### Linear regression for log transformed Longevity and Brain Size
+```{r}
 loglb <- lm(data = d, y2 ~ x2) 
 loglb
 ```
 
 
-#### Fit the regression model and, using {ggplot2}, produce a scatterplot
-#### with the fitted line superimposed upon the data. Append the the
-#### fitted model equation to your plot (HINT: use the function geom_text()).
+## Fit the regression model and, using {ggplot2}, produce a scatterplot with the fitted line superimposed upon the data. Append the the fitted model equation to your plot (HINT: use the function geom_text()).
 
-
-
+### Raw data
 ```{r}
-## Raw data
 g1 <- ggplot(data = d, aes(x = x1, y = y1)) + geom_point() +
   ggtitle("Linear Model of Primate Longevity and Brain Size") +
   theme(plot.title = element_text(hjust = 0.5)) +
@@ -220,12 +213,10 @@ g1 <- ggplot(data = d, aes(x = x1, y = y1)) + geom_point() +
   geom_smooth(method = "lm", formula = y ~ x, col = "purple") +
   annotate("text", label = "y = 1.218 * x + 248.952", x = 100, y = 800, size = 6)
 g1
-
 ```
 
-
+### Log transformed data
 ```{r}
-## Log transformed data
 g2 <- ggplot(data = d, aes(x = x2, y = y2)) + geom_point() +
   ggtitle("Linear Model of log(Primate Longevity) and log(Brain Size)") +
   theme(plot.title = element_text(hjust = 0.5)) +
@@ -236,71 +227,73 @@ g2 <- ggplot(data = d, aes(x = x2, y = y2)) + geom_point() +
 g2
 ```
 
-#### Identify and interpret the point estimate of the slope (BETA1),
-#### as well as the outcome of the test associated with the hypotheses
-#### H0: BETA1 = 0; HA: BETA1 NOT= 0. Also, find a 90% CI for the slope (BETA1) parameter.
+## Identify and interpret the point estimate of the slope (BETA1), as well as the outcome of the test associated with the hypotheses H0: BETA1 = 0; HA: BETA1 NOT= 0. Also, find a 90% CI for the slope (BETA1) parameter.
 
+### Identify slope (BETA1) of the raw data
 ```{r}
-## Identify slope (??1) of first regression (raw data)
+
 slope_lb <- lb$coefficients[2]
 slope_lb
+```
 
-## summarize in a data frame
+### ID the p value of BETA1
+```{r}
 t1 <- coef(summary(lb))
 t1 <- data.frame(unlist(t1))
 colnames(t1) <- c("Est", "SE", "t", "p")
 t1
-
-## ID the p value of BETA1
 t1$p[2]
+```
+#### Since p is less than 0.05 we can reject the null hypothesis (H0)
 
-
-## Calculate 90% confidence intervals
-
+### Calculate 90% confidence intervals
+```{r}
 alpha <- 0.10
 t1$lmCI <- confint(lb, level = 1 - alpha)  
 attributes(t1$lmCI)
+```
 
-
-## Confidence Intervals of the point estimate
+### Confidence Intervals of the point estimate
+```{r}
 t1[, 5]
+```
 
-
-## Identify slope of first regression (log transformed data)
+### Identify slope of the log transformed data
+```{r}
 slope_loglb <- loglb$coefficients[2]
 slope_loglb
+```
 
-
-## summarize in a data frame
+### ID p value of BETA1
+```{r}
 t2 <- coef(summary(loglb))
 t2 <- data.frame(unlist(t2))
 colnames(t2) <- c("Est", "SE", "t", "p")
 t2
 
-## ID p value of BETA1
 t2$p[2]
+```
+#### Since p is less than 0.05 we can reject the null hypothesis (H0)
 
-## Calculate 90% confidence intervals
+### Calculate 90% confidence intervals
+```{r}
 alpha <- 0.10
 t2$lmCI <- confint(loglb, level = 1 - alpha)  
 attributes(t2$lmCI)
+```
 
-
-
-## Confidence Intervals for the point estimate
+### Confidence Intervals for the point estimate
+```{r}
 t2[,5]
 ```
 
-## For both the raw and log transformed data, the p-values indicate that the BETA1 (the slope coefficient) is significantly different a null hypothesis of BETA1 being equaling zero.
+#### For both the raw and log transformed data, the p-values indicate that the BETA1 (the slope coefficient) is significantly different a null hypothesis of BETA1 equaling zero.
 
 
 
-#### Using your model, add lines for the 90% confidence and prediction
-#### interval bands on the plot, and add a legend to differentiate
-#### between the lines.
-
+## Using your model, add lines for the 90% confidence and prediction interval bands on the plot, and add a legend to differentiate between the lines.
+### Raw data
 ```{r}
-## Raw data
 h_hatlb <- predict(lb, newdata = data.frame(brain = d$Brain_Size_Species_Mean))
 dflb <- data.frame(cbind(d$Brain_Size_Species_Mean, d$MaxLongevity_m, h_hatlb))
 names(dflb) <- c("x", "y", "yhat")
@@ -337,9 +330,8 @@ g1 <- ggplot(data = d, aes(x = x1, y = y1)) + geom_point() +
 g1
 ```
 
-
+### Log transformed data
 ```{r}
-## Log transformed data
 h_hatloglb <- predict(loglb, newdata = data.frame(brain = d$Brain_Size_Species_Mean))
 dfloglb <- data.frame(cbind(d$Brain_Size_Species_Mean, d$MaxLongevity_m, h_hatloglb))
 names(dfloglb) <- c("x", "y", "yhat")
@@ -377,22 +369,14 @@ g2
 ```
 
 
-#### Produce a point estimate and associated 90% prediction interval
-#### for the longevity of a species whose brain weight is 800 gm.
-#### Do you trust the model to predict observations accurately for
-#### this value of the explanatory variable? Why or why not?
-#### Looking at your two models, which do you think is better? Why?
+## Produce a point estimate and associated 90% prediction intervalvfor the longevity of a species whose brain weight is 800 gm. Do you trust the model to predict observations accurately for this value of the explanatory variable? Why or why not? Looking at your two models, which do you think is better? Why?
 
-
-```{r}
 ### Raw data preditction
+```{r}
 longest1 <- t1$Est[2] * 800 + t1$Est[1]
 longest1
 
-
-
-piest1 <- predict(lb, newdata = data.frame(x1 = 800), interval = "prediction", 
-                  level = 0.90)  # for a single value
+piest1 <- predict(lb, newdata = data.frame(x1 = 800), interval = "prediction", level = 0.90) 
 piest1
 summary(lb)
 
@@ -410,24 +394,19 @@ g1 <- ggplot(data = d, aes(x = x1, y = y1)) + geom_point() +
   geom_line(aes(x = x1, y = upr, color = "90% PI")) +
   guides(color=guide_legend(title="")) +
   xlim(0, 850) + ylim(0, 1300) +
-  geom_point(x = 800, y = longest1, color = "purple", shape = 13)
+  geom_point(x = 800, y = longest1, color = "lime green", shape = 16, size = 4)
 g1
-
-
-
+```
 
 ### Log transformed data prediction
+```{r}
 longest2 <- t2$Est[2] * log(800) + t2$Est[1]
 longest2
 
-
-
-piest2 <- predict(loglb, newdata = data.frame(x2 = log(800)), interval = "prediction", 
-                  level = 0.90)  # for a single value
+piest2 <- predict(loglb, newdata = data.frame(x2 = log(800)), interval = "prediction", level = 0.90)
 piest2
 summary(loglb)
 
-## Plotting the estimated poing alongside the real log transformed data
 g2 <- ggplot(data = d, aes(x = x2, y = y2)) + geom_point() +
   ggtitle("Linear Model of Primate log(Longevity) and log(Brain Size)") +
   theme(plot.title = element_text(hjust = 0.5)) +
@@ -441,10 +420,10 @@ g2 <- ggplot(data = d, aes(x = x2, y = y2)) + geom_point() +
   geom_line(aes(x = x2, y = dfloglb$CIupr, color = "90% CI")) +
   guides(color=guide_legend(title="")) +
   xlim(3, 7) + ylim (5, 7) +
-  geom_point(x = log(800), y = longest2, color = "purple", shape = 13)
+  geom_point(x = log(800), y = longest2, color = "lime green", shape = 16, size = 4)
 g2
 ```
 
 
-## When looking at the the raw data versus the log tansformed data, the log transformed data appears to generate a better predictive model. The log transformed data provides a higher r-squared value, likely because it somewhat normalizes the data because brain size is not normally distributed in this data set. Because of the low fit of the models to the data I would be hesitant to take the predicted values as being highly accurate. Also when looking at the raw data further, most of the measured data points come from the lower end of the measured distribution for (<100 grams), and the dataset contains relatively fewer data points from the higher end of the distribution. This might mean that the dataset is biased towards species of smaller body size and is not entirely representative of the relationship between brain size and longevity, especially for species with larger brains.
+#### When looking at the the raw data versus the log tansformed data, the log transformed data appears to generate a better predictive model. The log transformed data provides a higher r-squared value, likely because it somewhat normalizes the data because brain size is not normally distributed in this data set. Because of the low fit of the models to the data I would be hesitant to take the predicted values as being highly accurate. Also when looking at the raw data further, most of the measured data points come from the lower end of the measured distribution for (<100 grams), and the dataset contains relatively fewer data points from the higher end of the distribution. This might mean that the dataset is biased towards species of smaller body size and is not entirely representative of the relationship between brain size and longevity, especially for species with larger brains.
 
